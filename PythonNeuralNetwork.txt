@@ -1,0 +1,83 @@
+import numpy as np
+
+# X = input of our 3 input XOR gate
+X = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0],
+              [0, 1, 1], [1, 0, 0], [1, 0, 1],
+              [1, 1, 0], [1, 1, 1]], dtype=float)
+# y = our output of the neural network
+y = np.array([[1], [0], [0], [0], [0], [0], [0], [1]], dtype=float)
+
+# Define a function for sigmoid activation
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+# Define a function for the derivative of the sigmoid
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+class NeuralNetwork:
+    def __init__(self):
+        # Set up the network architecture
+        self.input_size = 3
+        self.hidden_size = 4
+        self.output_size = 1
+
+        # Initialize weights with random values
+        self.weights_input_hidden = np.random.randn(self.input_size, self.hidden_size)
+        self.weights_hidden_output = np.random.randn(self.hidden_size, self.output_size)
+
+    def feed_forward(self, X):
+        # Propagate input through the network
+        self.hidden_input = np.dot(X, self.weights_input_hidden)
+        self.hidden_output = sigmoid(self.hidden_input)
+        self.final_input = np.dot(self.hidden_output, self.weights_hidden_output)
+        self.final_output = sigmoid(self.final_input)
+        return self.final_output
+
+    def backward_propagate(self, X, y, o):
+        # Calculate the loss
+        o_error = y - o
+        o_delta = o_error * sigmoid_derivative(o)
+
+        # Calculate hidden layer error
+        hidden_error = o_delta.dot(self.weights_hidden_output.T)
+        hidden_delta = hidden_error * sigmoid_derivative(self.hidden_output)
+
+        # Update the weights
+        self.weights_hidden_output += self.hidden_output.T.dot(o_delta)
+        self.weights_input_hidden += X.T.dot(hidden_delta)
+
+    def train(self, X, y, epochs):
+        for epoch in range(epochs):
+            # Forward and backward pass for each epoch
+            output = self.feed_forward(X)
+            self.backward_propagate(X, y, output)
+
+            # Calculate and print the loss
+            loss = np.mean(np.square(y - output))
+            print(f"Epoch {epoch}: Loss = {loss}")
+
+    def predict(self, x):
+        # Make predictions based on the trained model
+        prediction = self.feed_forward(x)
+        return prediction
+
+# Create a neural network instance
+nn = NeuralNetwork()
+
+# Normalize the input data
+X = X / np.amax(X, axis=0)
+
+# Train the neural network
+nn.train(X, y, epochs=1000)
+
+# Make predictions
+xPredicted = np.array([0, 0, 1], dtype=float)
+xPredicted = xPredicted / np.amax(xPredicted, axis=0)
+predicted_output = nn.predict(xPredicted)
+
+print("Predicted XOR output data based on trained weights: ")
+print("Expected (X1-X3):")
+print(xPredicted)
+print("Predicted Output:")
+print(predicted_output)
